@@ -107,9 +107,8 @@ class DeepCopy
             return $this->hashMap[$objectHash];
         }
 
+        $reflectedObject = new \ReflectionObject($object);
         if (null === $newObject) {
-            $reflectedObject = new \ReflectionObject($object);
-
             if (false === $isCloneable = $reflectedObject->isCloneable() and $this->skipUncloneable) {
                 $this->hashMap[$objectHash] = $object;
 
@@ -168,6 +167,7 @@ class DeepCopy
         $propertyValue = $property->getValue($object);
 
         // Copy the property
+        $property = new ReflectionProperty(get_class($object), $property->getName());
         $property->setValue($object, $this->recursiveCopy($propertyValue));
     }
 }

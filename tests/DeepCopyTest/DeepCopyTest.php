@@ -114,6 +114,20 @@ class DeepCopyTest extends AbstractTestClass
         $deepCopy->copy($o);
     }
 
+    public function testCloneToOtherClass()
+    {
+        $o = new B();
+        $o->property = 'foo';
+
+        $new = new D();
+
+        $deepCopy = new DeepCopy();
+        $new = $deepCopy->copy($o, $new);
+//        $this->assertEquals($o->property, $new->property);
+        var_dump($o);
+        var_dump($new);
+    }
+
     /**
      * @test
      */
@@ -158,7 +172,7 @@ class DeepCopyTest extends AbstractTestClass
         $new = $deepCopy->copy($o);
 
         $this->assertSame($o->property1, $new->property1);
-    }    
+    }
 }
 
 class A
@@ -175,4 +189,9 @@ class B
 class C
 {
     private function __clone(){}
+}
+
+class D
+{
+    public $property;
 }
