@@ -28,24 +28,28 @@ class DeepCopy
     /**
      * Cloning uncloneable properties won't throw exception.
      * @param $skipUncloneable
-     * @return $this
+     *
+     * @return self
      */
     public function skipUncloneable($skipUncloneable = true)
     {
         $this->skipUncloneable = $skipUncloneable;
+
         return $this;
     }
 
     /**
      * Perform a deep copy of the object.
      * @param object $object
+     * @param object|null $newObject
+     *
      * @return object
      */
-    public function copy($object)
+    public function copy($object, $newObject = null)
     {
         $this->hashMap = [];
 
-        return $this->recursiveCopy($object);
+        return $this->copyObject($object, $newObject);
     }
 
     public function addFilter(Filter $filter, Matcher $matcher)
@@ -67,9 +71,10 @@ class DeepCopy
             return $this->copyArray($var);
         }
         // Scalar
-        if (! is_object($var)) {
+        if (!is_object($var)) {
             return $var;
         }
+
         // Object
         return $this->copyObject($var);
     }
@@ -91,9 +96,10 @@ class DeepCopy
     /**
      * Copy an object
      * @param object $object
+     * @param object|null $newObject
      * @return object
      */
-    private function copyObject($object)
+    private function copyObject($object, $newObject = null)
     {
         $objectHash = spl_object_hash($object);
 
@@ -101,21 +107,27 @@ class DeepCopy
             return $this->hashMap[$objectHash];
         }
 
-        $reflectedObject = new \ReflectionObject($object);
+        if (null === $newObject) {
+            $reflectedObject = new \ReflectionObject($object);
 
-        if (false === $isCloneable = $reflectedObject->isCloneable() and $this->skipUncloneable) {
-            $this->hashMap[$objectHash] = $object;
-            return $object;
+            if (false === $isCloneable = $reflectedObject->isCloneable() and $this->skipUncloneable) {
+                $this->hashMap[$objectHash] = $object;
+
+                return $object;
+            }
+
+            if (false === $isCloneable) {
+                throw new CloneException(
+                    sprintf(
+                        'Class "%s" is not cloneable.',
+                        $object->getName()
+                    )
+                );
+            }
+
+            $newObject = clone $object;
         }
 
-        if (false === $isCloneable) {
-            throw new CloneException(sprintf(
-                'Class "%s" is not cloneable.',
-                $object->getName()
-            ));
-        }
-
-        $newObject = clone $object;
         $this->hashMap[$objectHash] = $newObject;
 
         foreach ($reflectedObject->getProperties() as $property) {
